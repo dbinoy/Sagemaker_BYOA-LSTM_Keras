@@ -1,0 +1,11 @@
+{
+  "batch_size": "1000",
+  "num_epochs": "20",
+  "dropout_ratio": "0.2",
+  "split_ratio": "0.2",
+  "sequence_size": "512",
+  "activation_function": "sigmoid",
+  "loss_function": "binary_crossentropy",
+  "optimizer_function": "rmsprop",
+  "metrics_measure": "accuracy"
+}
