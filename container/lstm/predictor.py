@@ -80,32 +80,34 @@ class ScoringService(object):
         print(type(ind))
         result = []
 
-        if mod == None or ind == None:
+        if mod == None:
             print("Model not loaded.")
         else:
             if 'max_name_length' not in ind:
-                print("Indices not loaded.")
+                max_name_length = 15
+                alphabet_size = 26
             else:
                 max_name_length = ind['max_name_length']
                 ind.pop('max_name_length', None)
                 alphabet_size = len(ind)
-                inputs_list = input.strip('\n').split(",")
-                num_inputs = len(inputs_list)
 
-                X_test = np.zeros((num_inputs, max_name_length, alphabet_size))
+            inputs_list = input.strip('\n').split(",")
+            num_inputs = len(inputs_list)
 
-                for i,name in enumerate(inputs_list):
-                    name = name.lower().strip('\n')
-                    for t, char in enumerate(name):
-                        if char in ind:
-                            X_test[i, t,ind[char]] = 1
+            X_test = np.zeros((num_inputs, max_name_length, alphabet_size))
 
-                with cls.graph.as_default():
-                    predictions = mod.predict(X_test)
+            for i,name in enumerate(inputs_list):
+                name = name.lower().strip('\n')
+                for t, char in enumerate(name):
+                    if char in ind:
+                        X_test[i, t,ind[char]] = 1
 
-                for i,name in enumerate(inputs_list):
-                    result.append("M," if predictions[i]>0.5 else "F,")
-                    print("{} ({})".format(inputs_list[i],"M" if predictions[i]>0.5 else "F"))
+            with cls.graph.as_default():
+                predictions = mod.predict(X_test)
+
+            for i,name in enumerate(inputs_list):
+                result.append("M," if predictions[i]>0.5 else "F,")
+                print("{} ({})".format(inputs_list[i],"M" if predictions[i]>0.5 else "F"))
 
         return result
 
@@ -116,7 +118,7 @@ app = flask.Flask(__name__)
 def ping():
     #Determine if the container is working and healthy.
     # Declare it healthy if we can load the model successfully.
-    health = ScoringService.get_model() is not None
+    health = ScoringService.get_model() is not None and ScoringService.get_indices() is not None
     status = 200 if health else 404
     return flask.Response(response='\n', status=status, mimetype='application/json')
 
