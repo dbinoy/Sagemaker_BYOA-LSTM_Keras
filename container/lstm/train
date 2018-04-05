@@ -126,7 +126,7 @@ def train():
         for n in names:
             txt += n.lower()
         #Alphabet derived as an unordered set containing unique entries of all characters used in name
-        chars = set(txt)
+        chars = sorted(set(txt))
         alphabet_size = len(chars)
 
         #Assign index values to each symbols in Alphabet
