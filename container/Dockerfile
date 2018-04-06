@@ -52,8 +52,8 @@ RUN apt-get update && \
 
 RUN pip3 install --upgrade pip
 RUN pip3 --no-cache-dir install \
-        setuptools \
-        tensorflow \
+        setuptools 
+RUN pip3 --no-cache-dir install \
         numpy \
         scipy \
         pandas \
