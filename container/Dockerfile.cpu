@@ -46,7 +46,6 @@ RUN pip3 --no-cache-dir install \
         pandas \
         scipy \
         sklearn \
-        seaborn \
         pyyaml \
         pytz
 
