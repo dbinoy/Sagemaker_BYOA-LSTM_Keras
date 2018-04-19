@@ -6,58 +6,57 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         apt-utils \
         build-essential \
         curl \
-        git \
-        libcurl3-dev \
         libfreetype6-dev \
         libpng12-dev \
         libzmq3-dev \
+        libhdf5-dev \
+        libcurl3-dev \
+        libgtk2.0-0 \
         pkg-config \
-        python-dev \
+        python3-dev \
+        python3-pip \
         rsync \
         software-properties-common \
         unzip \
-        zip \
-        zlib1g-dev \
-        openjdk-8-jdk \
-        openjdk-8-jre-headless \
+        gzip \
         wget \
         vim \
-        iputils-ping \
+        git \
         nginx \
         ca-certificates \
         && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-RUN curl -fSsL -O https://bootstrap.pypa.io/get-pip.py && \
-    python get-pip.py && \
-    rm get-pip.py
+RUN pip3 install --upgrade pip
 
-RUN pip install numpy tensorflow-serving-api==1.5
+RUN pip3 --no-cache-dir install \
+        setuptools
 
-RUN pip --no-cache-dir install \
+RUN pip3 --no-cache-dir install \
+        tensorflow
+
+# install tensorflow-model-server 1.5. 1.6 is not working as of 3/29/2018 for unknown reasons.
+#RUN wget 'http://storage.googleapis.com/tensorflow-serving-apt/pool/tensorflow-model-server/t/tensorflow-model-server/tensorflow-model-server_1.5.0_all.deb' && \
+#    dpkg -i tensorflow-model-server_1.5.0_all.deb
+
+RUN pip3 --no-cache-dir install \
         h5py \
         numpy \
         pandas \
         scipy \
         sklearn \
+        seaborn \
         pyyaml \
         pytz
 
-RUN pip --no-cache-dir install \
+RUN pip3 --no-cache-dir install \
         keras --no-deps
 
-RUN pip --no-cache-dir install \
+RUN pip3 --no-cache-dir install \
         flask \
         gevent \
         gunicorn
-
-RUN pip install numpy boto3 six awscli flask==0.11 Jinja2==2.9 tensorflow-serving-api==1.5 gevent gunicorn
-
-# install tensorflow-model-server 1.5. 1.6 is not working as of 3/29/2018 for unknown reasons.
-RUN wget 'http://storage.googleapis.com/tensorflow-serving-apt/pool/tensorflow-model-server/t/tensorflow-model-server/tensorflow-model-server_1.5.0_all.deb' && \
-    dpkg -i tensorflow-model-server_1.5.0_all.deb
-
 
 # Set some environment variables. PYTHONUNBUFFERED keeps Python from buffering our standard
 # output stream, which means that logs can be delivered to the user quickly. PYTHONDONTWRITEBYTECODE
