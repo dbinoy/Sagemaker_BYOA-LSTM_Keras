@@ -1,0 +1,73 @@
+FROM ubuntu:16.04
+
+MAINTAINER Binoy Das <binoyd@amazon.com>
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        apt-utils \
+        build-essential \
+        curl \
+        git \
+        libcurl3-dev \
+        libfreetype6-dev \
+        libpng12-dev \
+        libzmq3-dev \
+        pkg-config \
+        python-dev \
+        rsync \
+        software-properties-common \
+        unzip \
+        zip \
+        zlib1g-dev \
+        openjdk-8-jdk \
+        openjdk-8-jre-headless \
+        wget \
+        vim \
+        iputils-ping \
+        nginx \
+        ca-certificates \
+        && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN curl -fSsL -O https://bootstrap.pypa.io/get-pip.py && \
+    python get-pip.py && \
+    rm get-pip.py
+
+RUN pip install numpy tensorflow-serving-api==1.5
+
+RUN pip --no-cache-dir install \
+        h5py \
+        numpy \
+        pandas \
+        scipy \
+        sklearn \
+        pyyaml \
+        pytz
+
+RUN pip --no-cache-dir install \
+        keras --no-deps
+
+RUN pip --no-cache-dir install \
+        flask \
+        gevent \
+        gunicorn
+
+RUN pip install numpy boto3 six awscli flask==0.11 Jinja2==2.9 tensorflow-serving-api==1.5 gevent gunicorn
+
+# install tensorflow-model-server 1.5. 1.6 is not working as of 3/29/2018 for unknown reasons.
+RUN wget 'http://storage.googleapis.com/tensorflow-serving-apt/pool/tensorflow-model-server/t/tensorflow-model-server/tensorflow-model-server_1.5.0_all.deb' && \
+    dpkg -i tensorflow-model-server_1.5.0_all.deb
+
+
+# Set some environment variables. PYTHONUNBUFFERED keeps Python from buffering our standard
+# output stream, which means that logs can be delivered to the user quickly. PYTHONDONTWRITEBYTECODE
+# keeps Python from writing the .pyc files which are unnecessary in this case. We also update
+# PATH so that the train and serve programs are found when the container is invoked.
+
+ENV PYTHONUNBUFFERED=TRUE
+ENV PYTHONDONTWRITEBYTECODE=TRUE
+ENV PATH="/opt/program:${PATH}"
+
+# Set up the program in the image
+COPY byoa /opt/program
+WORKDIR /opt/program
