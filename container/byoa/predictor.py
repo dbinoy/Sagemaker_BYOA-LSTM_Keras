@@ -13,21 +13,7 @@ import traceback
 
 import numpy as np
 
-import keras
-from keras.models import Sequential
-from keras.layers import Dense, Dropout
-from keras.layers import Embedding
-from keras.layers import LSTM
-from keras.models import load_model
-import flask
-
-import tensorflow as tf
-
-import pandas as pd
-
-from os import listdir, sep
-from os.path import abspath, basename, isdir
-from sys import argv
+# TODO: Import necessary libraries
 
 prefix = '/opt/ml/'
 model_path = os.path.join(prefix, 'model')
@@ -40,31 +26,14 @@ class ScoringService(object):
     model = None                # Where we keep the model when it's loaded
     graph = None
     indices = None              # Where we keep the indices of Alphabet when it's loaded
-
-    @classmethod
-    def get_indices(cls):
-        #Get the indices for Alphabet for this instance, loading it if it's not already loaded
-        if cls.indices == None:
-            model_type='lstm-gender-classifier'
-            index_path = os.path.join(model_path, '{}-indices.npy'.format(model_type))
-            if os.path.exists(index_path):
-                cls.indices = np.load(index_path).item()
-            else:
-                print("Character Indices not found.")
-        return cls.indices
+    
+   # TODO : Optional - Any other artefacts necessary to format data (if saved after training completed)
 
     @classmethod
     def get_model(cls):
-        #Get the model object for this instance, loading it if it's not already loaded
         if cls.model == None:
-            model_type='lstm-gender-classifier'
-            mod_path = os.path.join(model_path, '{}-model.h5'.format(model_type))
-            if os.path.exists(mod_path):
-                cls.model = load_model(mod_path)
-                cls.model._make_predict_function()
-                cls.graph = tf.get_default_graph()
-            else:
-                print("LSTM Model not found.")
+            #TODO: Get the model object for this instance, loading it if it's not already loaded
+
         return cls.model
 
     @classmethod
@@ -74,40 +43,14 @@ class ScoringService(object):
         Args:
             input (a pandas dataframe): The data on which to do the predictions. There will be
                 one prediction per row in the dataframe"""
-        mod = cls.get_model()
-        ind = cls.get_indices()
-        print(type(mod))
-        print(type(ind))
-        result = []
+        
+        #TODO: Get model object for this instance
 
         if mod == None:
             print("Model not loaded.")
         else:
-            if 'max_name_length' not in ind:
-                max_name_length = 15
-                alphabet_size = 26
-            else:
-                max_name_length = ind['max_name_length']
-                ind.pop('max_name_length', None)
-                alphabet_size = len(ind)
 
-            inputs_list = input.strip('\n').split(",")
-            num_inputs = len(inputs_list)
-
-            X_test = np.zeros((num_inputs, max_name_length, alphabet_size))
-
-            for i,name in enumerate(inputs_list):
-                name = name.lower().strip('\n')
-                for t, char in enumerate(name):
-                    if char in ind:
-                        X_test[i, t,ind[char]] = 1
-
-            with cls.graph.as_default():
-                predictions = mod.predict(X_test)
-
-            for i,name in enumerate(inputs_list):
-                result.append("M," if predictions[i]>0.5 else "F,")
-                print("{} ({})".format(inputs_list[i],"M" if predictions[i]>0.5 else "F"))
+            #TODO: Pass the input data to the model, and return prediction response
 
         return result
 
@@ -130,13 +73,6 @@ def transformation():
     # Convert from CSV to pandas
     if flask.request.content_type == 'text/csv':
         data = flask.request.data.decode('utf-8')
-        '''
-        print(type(data))
-        print(data)
-        data = StringIO(data)
-        print(type(data))
-        print(data)
-        '''
     else:
         return flask.Response(response='This predictor only supports CSV data', status=415, mimetype='text/plain')
 

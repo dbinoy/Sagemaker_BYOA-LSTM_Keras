@@ -14,22 +14,11 @@ import traceback
 
 import numpy as np
 import pandas as pd
-from numpy import genfromtxt
-import keras
-from keras.models import Sequential
-from keras.layers import Dense, Activation, Dropout
-from keras.layers import LSTM
-from keras.models import load_model
-from sklearn.utils import shuffle
 
-from os import listdir, sep
-from os.path import abspath, basename, isdir
-from sys import argv
+# TODO: Import necessary libraries
 
 # These are the paths to where SageMaker mounts interesting things in your container.
-
 prefix = '/opt/ml/'
-
 input_path = prefix + 'input/data'
 output_path = os.path.join(prefix, 'output')
 model_path = os.path.join(prefix, 'model')
@@ -41,151 +30,24 @@ channel_name='train'
 training_path = os.path.join(input_path, channel_name)
 if not os.path.exists(training_path):
     training_path = os.path.join(input_path, 'training')
-# function to print directory structure
-def tree(dir=prefix, padding=' ', print_files=True):
-    print (padding[:-1] + '+-' + basename(abspath(dir)) + '/')
-    padding = padding + ' '
-    files = []
-    if print_files:
-        files = listdir(dir)
-    else:
-        files = [x for x in listdir(dir) if isdir(dir + sep + x)]
-    count = 0
-    for file in files:
-        count += 1
-        print (padding + '|')
-        path = dir + sep + file
-        if isdir(path):
-            if count == len(files):
-                tree(path, padding + ' ', print_files)
-            else:
-                tree(path, padding + '|', print_files)
-        else:
-            print (padding + '+-' + file)
 
 # The function to execute the training.
 def train():
     print('Starting the training.')
     try:
-        # Read in any hyperparameters that the user passed with the training job
-        with open(param_path, 'r') as tc:
-            trainingParams = json.load(tc)
-        print("Heperparameters file : " + json.dumps(trainingParams))
-        #Extract the supported hyperparameters
-        batch_records = int(trainingParams.get('batch_size', '1000'))
-        num_epochs=int(trainingParams.get('num_epochs', '5'))
-        dropout_ratio=float(trainingParams.get('dropout_ratio', '0.2'))
-        split_ratio=float(trainingParams.get('split_ratio', '0.2'))
-        sequence_size=int(trainingParams.get('sequence_size', '512'))
-        activation_function=trainingParams.get('activation_function', 'sigmoid')
-        loss_function=trainingParams.get('loss_function', 'binary_crossentropy')
-        optimizer_function=trainingParams.get('optimizer_function', 'rmsprop')
-        metrics_measure=trainingParams.get('metrics_measure', 'accuracy')
-        print("Hyperparameters initialized")
+        # TODO: Read in any hyperparameters that the user passed with the training job
 
-        # Original source of training data, which the trainer would defult to if no train channel is specified
-        data_filename = "https://s3.amazonaws.com/name-gender/allnames.txt"
-        if os.path.exists(training_path) :
-            input_files = [ os.path.join(training_path, file) for file in os.listdir(training_path) ]
-            if len(input_files) == 0:
-                print('There are no files in {}.\nUsing default training data set available at {}'.format(training_path, data_filename))
-            else:
-                data_filename = input_files[0]
-        else:
-            print('No training folder {}.\nUsing default training data set available at {}'.format(training_path, data_filename))
-        print("Loading data from : {}".format(data_filename))
 
-        #Read training data from CSV and load into a data frame
-        df=pd.read_csv(data_filename, sep=',', names = ["Name", "Gender", "Count"])
-        print("Training data loaded")
 
-        #Remove unnecessary attributes from training data
-        df = df.drop(['Count'], axis=1)
+        # TODO: Original source of training data, which the trainer would defult to if no train channel is specified
 
-        #Remove duplicate rows from training data
-        df = df.drop_duplicates()
 
-        #Shuffle training data
-        df = shuffle(df)
 
-        #number of names
-        num_names = df.shape[0]
+        #TODO: Load training data, create model and fit model to data
 
-        # length of longest name
-        max_name_length = (df['Name'].map(len).max())
-
-        # length of shortest name
-        min_name_length = (df['Name'].map(len).min())
-
-        #Separate data andn label
-        names = df['Name'].values
-        genders = df['Gender']
-
-        #Determine Alphabets in the input
-        txt = ""
-        for n in names:
-            txt += n.lower()
-        #Alphabet derived as an unordered set containing unique entries of all characters used in name
-        chars = sorted(set(txt))
-        alphabet_size = len(chars)
-
-        #Assign index values to each symbols in Alphabet
-        char_indices = dict((c, i) for i, c in enumerate(chars))
-
-        #One hot encoding to create training-X
-        X = np.zeros((num_names, max_name_length, alphabet_size))
-        for i,name in enumerate(names):
-            name = name.lower()
-            for t, char in enumerate(name):
-                X[i, t,char_indices[char]] = 1
-
-        #Encode training-Y with 'M' as 1 and 'F' as 0
-        Y = np.ones((num_names,1))
-        Y[df['Gender'] == 'F',0] = 0
-
-        #Shape of one-hot encoded array is equal to length of longest input string by size of Alphabet
-        data_dim = alphabet_size
-        timesteps = max_name_length
-        print("Training data prepared")
-
-        #Consider this as a problem to recognize just one class of output from the rest, effectively same as binary classification
-        num_classes = 1
-
-        #Initiate a sequential model
-        model = Sequential()
-
-        # Add an LSTM layer that returns a sequence of vectors of dimension sequence size (512 by default)
-        model.add(LSTM(sequence_size, return_sequences=True, input_shape=(timesteps, data_dim)))
-
-        # Drop out certain percentage (20% by default) to prevent over fitting
-        if dropout_ratio > 0 and dropout_ratio < 1:
-            model.add(Dropout(dropout_ratio))
-
-        # Stack another LSTM layer that returns a single vector of dimension sequence size (512 by default)
-        model.add(LSTM(sequence_size, return_sequences=False))
-
-        # Drop out certain percentage (20% by default) to prevent over fitting
-        if dropout_ratio > 0 and dropout_ratio < 1:
-            model.add(Dropout(dropout_ratio))
-
-        # Finally add an activation layer with a chosen activation function (Sigmoid by default)
-        model.add(Dense(num_classes, activation=activation_function))
-
-        # Compile the Stacked LSTM Model with a loss function (binary_crossentropy by default),
-        #optimizer function (rmsprop) and a metric for measuring model effectiveness (accuracy by default)
-        model.compile(loss=loss_function, optimizer=optimizer_function, metrics=[metrics_measure])
-        print("Model compiled")
-
-        # Train the model for a number of epochs (50 by default), with a batch size (1000 by default)
-        # Split a portion of trainining data (20% by default) to be used a validation data
-        model.fit(X, Y, validation_split=split_ratio, epochs=num_epochs, batch_size=batch_records)
-        print("Model trained")
 
         # Save the model artifacts and character indices under /opt/ml/model
-        model_type='lstm-gender-classifier'
-        model.save(os.path.join(model_path,'{}-model.h5'.format(model_type)))
-        char_indices['max_name_length'] = max_name_length
-        np.save(os.path.join(model_path,'{}-indices.npy'.format(model_type)), char_indices)
+
 
         print('Training complete.')
     except Exception as e:
