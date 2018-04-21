@@ -11,7 +11,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         cuda-curand-9-0 \
         cuda-cusolver-9-0 \
         cuda-cusparse-9-0 \
-        curl \
         libcudnn7=7.0.5.15-1+cuda9.0 \
         libfreetype6-dev \
         libpng12-dev \
@@ -26,6 +25,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         software-properties-common \
         unzip \
         gzip \
+        curl \        
         wget \
         vim \
         git \
@@ -33,7 +33,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates \
         && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+    find /usr/local/cuda-9.0/lib64/ -type f -name 'lib*_static.a' -not -name 'libcudart_static.a' -delete && \
+    rm -rf ~/.nv/
+
 
 RUN pip3 install --upgrade pip
 
@@ -41,8 +44,8 @@ RUN pip3 --no-cache-dir install \
         setuptools
 
 RUN pip3 --no-cache-dir install \
-        tensorflow-gpu
-
+        tensorflow-gpu==1.6.0
+         
 RUN pip3 --no-cache-dir install \
         h5py \
         numpy \
